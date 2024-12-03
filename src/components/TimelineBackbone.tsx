@@ -107,18 +107,22 @@ const TimelineBackbone = () => {
     }, []);
 
     const activeZoomLevels = useMemo(() => {
+        console.log("Calculating activeZoomLevels");
         const scaleSets = generateScaleSets();
         return scaleSets.map(set => 
             (set.zoomThreshold / 13800000000) * zoomLevel > 1
         );
     }, [zoomLevel]);
-
+    
     const currentScaleSet = useMemo(() => {
+        console.log("Calculating currentScaleSet");
         const scaleSets = generateScaleSets();
         const activeIndex = activeZoomLevels.findIndex(active => active);
+        console.log("Active index:", activeIndex);
+        console.log("Active zoom levels:", activeZoomLevels);
         return activeIndex >= 0 ? scaleSets[activeIndex] : scaleSets[0];
-    }, [activeZoomLevels, zoomLevel]);
-
+    }, [activeZoomLevels]); // Still just activeZoomLevels as dependency
+    
     const generateTicks = useCallback(() => {
         const tickMap = new Map<number, Tick>();
 
@@ -268,8 +272,8 @@ const TimelineBackbone = () => {
                                 )}
 
                                 {showDebugLabels && (
-                                    <div className="absolute -bottom-12 text-[8px] opacity-50 w-12 text-center -translate-x-1/2 left-1/2">
-                                        {rightPos.toFixed(1)}%
+                                    <div className="absolute -top-6 text-[8px] opacity-50 w-12 text-center -translate-x-1/2 left-1/2">
+                                        {scaledRightPos.toFixed(1)}%
                                         <br />
                                         {tick.year}
                                     </div>
