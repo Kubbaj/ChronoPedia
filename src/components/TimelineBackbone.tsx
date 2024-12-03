@@ -9,17 +9,33 @@ interface Tick {
     dotted?: boolean;
 }
 
-interface ZoomLevel {
+// The complete sequence from 10000 down to 0.000001 (1 year)
+const SCALE_SEQUENCE = [
+    10000, 5000, 1000, 500, 100, 50, 10, 5, 1, 0.5, 0.1, 0.05, 
+    0.01, 0.005, 0.001, 0.0005, 0.0001, 0.00005, 0.00001, 0.000005, 0.000001
+];
+
+interface ScaleSet {
     zoomThreshold: number;
-    minInterval: number;
-    label: string;
+    mega: number;
+    major: number;
+    minor: number;
 }
 
-const zoomLevels: ZoomLevel[] = [
-    { zoomThreshold: 10000, minInterval: 500, label: "Mya" },
-    { zoomThreshold: 5000, minInterval: 100, label: "Mya" },
-    { zoomThreshold: 1000, minInterval: 50, label: "Mya" }
-];
+const generateScaleSets = (): ScaleSet[] => {
+    const scaleSets: ScaleSet[] = [];
+    
+    for (let i = 0; i < SCALE_SEQUENCE.length - 3; i++) {
+        scaleSets.push({
+            zoomThreshold: SCALE_SEQUENCE[i],
+            mega: SCALE_SEQUENCE[i + 1],
+            major: SCALE_SEQUENCE[i + 2],
+            minor: SCALE_SEQUENCE[i + 3]
+        });
+    }
+    
+    return scaleSets;
+};
 
 const tickStyles = {
     maxi: {
@@ -51,12 +67,27 @@ const tickStyles = {
     }
 };
 
+const formatTimeLabel = (mya: number): string => {
+    if (mya >= 1000) {
+        const billions = mya / 1000;
+        return `${Number.isInteger(billions) ? billions : billions.toFixed(1)}B`;
+    }
+    if (mya >= 1) {
+        return `${Number.isInteger(mya) ? mya : mya.toFixed(1)}M`;
+    }
+    if (mya >= 0.001) {
+        const thousands = mya * 1000;
+        return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)}K`;
+    }
+    const years = mya * 1000000;
+    return `${Number.isInteger(years) ? years : years.toFixed(1)}`;
+};
+
 const TimelineBackbone = () => {
     const [zoomLevel, setZoomLevel] = useState(1);
     const [showDebugLabels, setShowDebugLabels] = useState(false);
 
-
-    const handleWheel = useCallback((e) => {
+    const handleWheel = useCallback((e: React.WheelEvent) => {
         e.preventDefault();
         const zoomFactor = 1.1;
         if (e.deltaY < 0) {
@@ -67,34 +98,19 @@ const TimelineBackbone = () => {
     }, []);
 
     const activeZoomLevels = useMemo(() => {
-        return zoomLevels.map(level =>
-            (level.zoomThreshold / 13800) * zoomLevel > 1
+        const scaleSets = generateScaleSets();
+        return scaleSets.map(set => 
+            (set.zoomThreshold / 13800) * zoomLevel > 1
         );
     }, [zoomLevel]);
 
-    const currentLevels = useMemo(() => {
-        const levels = {
-            minor: activeZoomLevels[0] ? 500 : 1000,
-            major: activeZoomLevels[0] ? 1000 : 5000,
-            mega: activeZoomLevels[0] ? 5000 : null
-        };
+    const currentScaleSet = useMemo(() => {
+        const scaleSets = generateScaleSets();
+        const activeIndex = activeZoomLevels.findIndex(active => active);
+        return activeIndex >= 0 ? scaleSets[activeIndex] : scaleSets[0];
+    }, [activeZoomLevels, zoomLevel]);
 
-        if (activeZoomLevels[1]) {
-            levels.minor = 100;
-            levels.major = 500;
-            levels.mega = 1000;
-        }
-
-        if (activeZoomLevels[2]) {
-            levels.minor = 50;
-            levels.major = 100;
-            levels.mega = 500;
-        }
-
-        return levels;
-    }, [activeZoomLevels]);
-
-    const generateTicks = () => {
+    const generateTicks = useCallback(() => {
         const tickMap = new Map<number, Tick>();
 
         const addTick = (tick: Tick) => {
@@ -106,11 +122,11 @@ const TimelineBackbone = () => {
             }
         };
 
-        // Add base 1000 Mya (1 Bya) ticks
+        // Add base 1000 Mya ticks
         for (let mya = 1000; mya <= 13000; mya += 1000) {
             addTick({
                 mya,
-                label: `${mya / 1000}B`,
+                label: formatTimeLabel(mya),
                 level: mya % 5000 === 0 ? 'major' : 'minor'
             });
         }
@@ -119,27 +135,27 @@ const TimelineBackbone = () => {
         addTick({ mya: 0, label: 'TODAY', level: 'maxi' });
         addTick({ mya: 13800, label: '13.8B', level: 'maxi', dotted: true });
 
-        // Process each zoom level
-        // Process each zoom level
+        // Process each active zoom level
+        const scaleSets = generateScaleSets();
         activeZoomLevels.forEach((isActive, index) => {
             if (isActive) {
-                const { zoomThreshold, minInterval } = zoomLevels[index];
+                const scaleSet = scaleSets[index];
 
-                // First, identify existing ticks that will need promotion
+                // Identify ticks that need promotion
                 const ticksToPromote = {
-                    minors: [],
-                    majors: []
+                    minors: [] as Tick[],
+                    majors: [] as Tick[]
                 };
 
                 tickMap.forEach((tick) => {
-                    if (tick.mya < zoomThreshold) {
+                    if (tick.mya < scaleSet.zoomThreshold) {
                         if (tick.level === 'minor') ticksToPromote.minors.push(tick);
                         if (tick.level === 'major') ticksToPromote.majors.push(tick);
                     }
                 });
 
                 // Add new minor ticks
-                for (let mya = minInterval; mya < zoomThreshold; mya += minInterval) {
+                for (let mya = scaleSet.minor; mya < scaleSet.zoomThreshold; mya += scaleSet.minor) {
                     addTick({
                         mya,
                         label: '',
@@ -147,32 +163,30 @@ const TimelineBackbone = () => {
                     });
                 }
 
-                // Promote existing ticks in order
+                // Promote existing ticks
                 ticksToPromote.majors.forEach(tick => {
                     tick.level = 'mega';
+                    tick.label = formatTimeLabel(tick.mya);
                 });
 
                 ticksToPromote.minors.forEach(tick => {
-                    if (tick.mya % currentLevels.major === 0) {
+                    if (tick.mya % scaleSet.major === 0) {
                         tick.level = 'major';
-                        tick.label = `${tick.mya / 1000}B`;  // Make sure label is added for promoted ticks
+                        tick.label = formatTimeLabel(tick.mya);
                     }
                 });
             }
         });
 
         return Array.from(tickMap.values()).sort((a, b) => a.mya - b.mya);
-    };
+    }, [activeZoomLevels]);
 
     const ticks = generateTicks();
 
     return (
-        <div
-            className="w-full max-w-6xl mx-auto px-10 pt-8 pb-32 overflow-hidden relative mt-[175px]"
-            onWheel={handleWheel}
-        >
-            {/* Debug Panel - Moved lower */}
-            <div className="absolute bottom-5 left-0 text-xs bg-white/80 p-2 z-10">
+        <>
+            {/* Debug Panel - Now outside timeline container */}
+            <div className="fixed left-4 bottom-4 text-xs bg-white/80 p-2 z-10 border border-gray-200 rounded shadow">
                 <div className="flex items-center gap-2 mb-2">
                     <input
                         type="checkbox"
@@ -182,13 +196,26 @@ const TimelineBackbone = () => {
                     />
                     <label htmlFor="showDebugLabels">Show position labels</label>
                 </div>
-                <div>Minor: {currentLevels.minor} Mya</div>
-                <div>Major: {currentLevels.major} Mya</div>
-                <div>Mega: {currentLevels.mega ? `${currentLevels.mega} Mya` : 'none'}</div>
+                <div>Zoom Level: {zoomLevel.toFixed(2)}</div>
+                <div>Active Levels: {activeZoomLevels.filter(l => l).length}</div>
+                {currentScaleSet && (
+                    <>
+                        <div>Threshold: {currentScaleSet.zoomThreshold}</div>
+                        <div>Mega: {currentScaleSet.mega}</div>
+                        <div>Major: {currentScaleSet.major}</div>
+                        <div>Minor: {currentScaleSet.minor}</div>
+                    </>
+                )}
             </div>
 
+        <div
+            className="w-full max-w-6xl mx-auto px-10 pt-8 pb-42 overflow-hidden relative mt-[175px]"
+            onWheel={handleWheel}
+        >
+
             <div className="relative h-48">
-                <div className="absolute top-24 left-0 right-0 h-px bg-black"
+                <div 
+                    className="absolute top-24 left-0 right-0 h-px bg-black"
                     style={{
                         transform: `scaleX(${zoomLevel})`,
                         transformOrigin: 'right'
@@ -196,25 +223,27 @@ const TimelineBackbone = () => {
                 />
 
                 {ticks.map((tick, index) => {
-                    const rightPos = (tick.mya / 13800 * 100);  // Inverted the position calculation
+                    const rightPos = (tick.mya / 13800 * 100);
                     const scaledRightPos = rightPos * zoomLevel;
                     const { height, width, textStyle, showLabel } = tickStyles[tick.level];
 
                     return (
-                        <div key={index}
+                        <div 
+                            key={index}
                             className="absolute"
                             style={{
                                 right: `${scaledRightPos}%`,
                                 top: '50%',
                                 transform: 'translate(50%, -50%)',
                                 display: scaledRightPos > 100 ? 'none' : 'block'
-                            }}>
+                            }}
+                        >
                             <div className={`
-                relative 
-                ${height} ${width}
-                ${tick.dotted ? 'border-l-4 border-dashed border-black' : 'bg-black'}
-                mx-auto
-              `} />
+                                relative 
+                                ${height} ${width}
+                                ${tick.dotted ? 'border-l-4 border-dashed border-black' : 'bg-black'}
+                                mx-auto
+                            `} />
 
                             {showLabel && tick.label && (
                                 <div className={`
@@ -225,12 +254,11 @@ const TimelineBackbone = () => {
                                     ${tickStyles[tick.level].labelSpacing}
                                     ${textStyle}
                                     whitespace-nowrap
-                                  `}>
+                                `}>
                                     {tick.label}
                                 </div>
                             )}
 
-                            {/* Position Debug Label */}
                             {showDebugLabels && (
                                 <div className="absolute -bottom-12 text-[8px] opacity-50 w-12 text-center -translate-x-1/2 left-1/2">
                                     {rightPos.toFixed(1)}%
@@ -242,7 +270,7 @@ const TimelineBackbone = () => {
                     );
                 })}
             </div>
-        </div>
+        </div> </>
     );
 };
 
