@@ -1,13 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-
-type TickLevel = 'maxi' | 'mega' | 'major' | 'minor';
-
-interface Tick {
-    year: number;
-    label: string;
-    level: TickLevel;
-    dotted?: boolean;
-}
+import { TickLevel, Tick, ScaleSet } from './types';
+import TimelinePeriods from './TimelinePeriods';
+import { GEOLOGICAL_EONS } from './periods';
 
 // The complete sequence in years
 const SCALE_SEQUENCE = [
@@ -19,12 +13,6 @@ const SCALE_SEQUENCE = [
     (1/12)
 ];
 
-interface ScaleSet {
-    zoomThreshold: number;
-    mega: number;
-    major: number;
-    minor: number;
-}
 
 const generateScaleSets = (): ScaleSet[] => {
     const scaleSets: ScaleSet[] = [];
@@ -131,7 +119,6 @@ const TimelineBackbone = () => {
     }, []);
 
     const activeZoomLevels = useMemo(() => {
-        console.log("Calculating activeZoomLevels");
         const scaleSets = generateScaleSets();
         return scaleSets.map(set => 
             (set.zoomThreshold / 13800000000) * zoomLevel > 1
@@ -139,13 +126,10 @@ const TimelineBackbone = () => {
     }, [zoomLevel]);
     
     const currentScaleSet = useMemo(() => {
-        console.log("Calculating currentScaleSet");
         const scaleSets = generateScaleSets();
         // Get the last true index instead of the first
         const activeIndex = activeZoomLevels.lastIndexOf(true);
-        console.log("Active index:", activeIndex);
-        console.log("Active zoom levels:", activeZoomLevels);
-        return activeIndex >= 0 ? scaleSets[activeIndex] : scaleSets[0];
+         return activeIndex >= 0 ? scaleSets[activeIndex] : scaleSets[0];
     }, [activeZoomLevels]);
 
     const generateTicks = useCallback(() => {
@@ -260,6 +244,11 @@ const TimelineBackbone = () => {
                         }}
                     />
 
+                    <TimelinePeriods 
+                    zoomLevel={zoomLevel} 
+                    periods={GEOLOGICAL_EONS}
+                    />
+
                     {ticks.map((tick, index) => {
                         const rightPos = (tick.year / 13800000000 * 100);
                         const scaledRightPos = rightPos * zoomLevel;
@@ -308,6 +297,7 @@ const TimelineBackbone = () => {
                         );
                     })}
                 </div>
+                
             </div>
         </>
     );
