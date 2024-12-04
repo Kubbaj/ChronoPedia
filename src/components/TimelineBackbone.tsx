@@ -31,29 +31,29 @@ const generateScaleSets = (): ScaleSet[] => {
 
 const tickStyles = {
     maxi: {
-        height: 'h-32',
-        width: 'w-2',
+        height: '300px',
+        width: '10px',
         textStyle: 'text-[1.5rem] font-bold underline',
         labelSpacing: '-bottom-8',
         showLabel: true
     },
     mega: {
-        height: 'h-24',
-        width: 'w-2',
+        height: '150px',
+        width: '6px',
         textStyle: 'text-[1rem] font-bold',
         labelSpacing: '-bottom-6',
         showLabel: true
     },
     major: {
-        height: 'h-12',
-        width: 'w-1',
+        height: '80px',
+        width: '4px',
         textStyle: 'text-[0.75rem]',
         labelSpacing: '-bottom-4',
         showLabel: true
     },
     minor: {
-        height: 'h-6',
-        width: 'w-px',
+        height: '20px',
+        width: '2px',
         textStyle: '',
         showLabel: false
     }
@@ -139,6 +139,10 @@ const TimelineBackbone = () => {
     
         const addTick = (tick: Tick) => {
             const existing = tickMap.get(tick.year);
+            // Add special case to prevent overwriting the "TODAY" tick
+            if (tick.year === 0 && existing?.label === 'TODAY') {
+                return;
+            }
             if (!existing ||
                 ['maxi', 'mega', 'major', 'minor'].indexOf(tick.level) <
                 ['maxi', 'mega', 'major', 'minor'].indexOf(existing.level)) {
@@ -155,7 +159,7 @@ const TimelineBackbone = () => {
             });
         }
     
-        // Maxi ticks
+        // Add "TODAY" tick last to ensure it's not overwritten
         addTick({ year: 0, label: 'TODAY', level: 'maxi' });
         addTick({ year: 13800000000, label: '13.8B', level: 'maxi', dotted: true });
     
@@ -175,6 +179,9 @@ const TimelineBackbone = () => {
     
                 // Promote existing ticks at this scale
                 tickMap.forEach((tick) => {
+                    // Don't modify the "TODAY" tick
+                    if (tick.year === 0) return;
+                    
                     if (tick.year < scaleSet.zoomThreshold) {
                         if (tick.year % scaleSet.major === 0) {
                             tick.level = 'major';
@@ -191,6 +198,7 @@ const TimelineBackbone = () => {
     
         return Array.from(tickMap.values()).sort((a, b) => a.year - b.year);
     }, [activeZoomLevels]);
+    
 
     const ticks = generateTicks();
 
@@ -226,7 +234,7 @@ const TimelineBackbone = () => {
             >
                 <div className="relative h-48">
                     <div 
-                        className="absolute top-24 left-0 right-0 h-px bg-black z-10 transition-transform duration-200"
+                        className="absolute top-24 left-0 right-0 h-px bg-black z-10 transition-transform duration-800"
                         style={{
                             transform: `scaleX(${getLineScale(zoomLevel)})`, // Replace the existing scaleX
                             transformOrigin: 'right'
@@ -248,7 +256,7 @@ const TimelineBackbone = () => {
     return (
         <div 
             key={tick.year} // Use year as stable key
-            className="absolute transition-all duration-200"
+            className="absolute transition-all duration-800"
             style={{
                 right: `${scaledRightPos}%`,
                 top: '50%',
@@ -258,11 +266,14 @@ const TimelineBackbone = () => {
         >
             <div className={`
                 relative 
-                transition-all duration-200 // Only transition size/appearance
-                ${height} ${width}
+                transition-all duration-800 // Only transition size/appearance
                 ${tick.dotted ? 'border-l-4 border-dashed border-black' : 'bg-black'}
                 mx-auto
-            `} />
+            `} 
+                style={{
+                    height: height,
+                    width: width 
+                    }} />
 
             {showLabel && tick.label && (
                 <div className={`
@@ -270,7 +281,7 @@ const TimelineBackbone = () => {
                     w-24 
                     text-center 
                     -translate-x-1/2 left-1/2
-                    transition-all duration-200 // Transition text size/position
+                    transition-all duration-800 // Transition text size/position
                     ${tickStyles[tick.level].labelSpacing}
                     ${textStyle}
                     whitespace-nowrap

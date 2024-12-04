@@ -28,25 +28,26 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
     const visibleLevels = getVisibleLevels();
 
     const getPeriodHeight = (level: number): string => {
-        const baseHeight = 16; // Base height in units (equivalent to h-16)
+        const baseHeight = 64;
         
-        // If this level isn't visible yet, no height
         if (!visibleLevels.includes(level)) {
-            return 'h-0';
+            return '0px';
         }
-
-        // Count levels that appeared after this one
-        const newerLevels = visibleLevels.filter(visibleLevel => 
-            LEVEL_YEAR_THRESHOLDS[visibleLevel] < LEVEL_YEAR_THRESHOLDS[level]
-        ).length;
-
-        // Each newer level increases height by 50%
-        const expansion = newerLevels * 0.5;
-        const heightMultiplier = 1 + expansion;
+    
+        // Get the lowest (most detailed) visible level
+        const lowestVisibleLevel = Math.max(...visibleLevels);
         
-        // Convert to tailwind height class (rounded to nearest available class)
-        const height = Math.round(baseHeight * heightMultiplier);
-        return `h-${height}`;
+        // Calculate steps away from current lowest level
+        const stepsFromLowest = lowestVisibleLevel - level;
+        
+        if (stepsFromLowest <= 0) {
+            return `${baseHeight}px`;
+        } else if (stepsFromLowest === 1) {
+            return `${baseHeight * 1.6}px`;
+        } else {
+            const expansion = 1.6 + ((stepsFromLowest - 1) * 0.3);
+            return `${baseHeight * expansion}px`;
+        }
     };
 
     return (
@@ -64,19 +65,20 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
                     <div
                         key={index}
                         className={`absolute rounded-sm flex items-start 
-                                  text-xs font-medium transition-all duration-200
-                                  ${getPeriodHeight(period.level)}`}
+                                  text-xs font-medium transition-all duration-400
+                                  `}
                         style={{
                             right: `${scaledRightPos}%`,
                             width: `${width}%`,
                             top: '50%',
+                            height: getPeriodHeight(period.level), // Apply height via style
                             transform: 'translateY(-50%)',
                             backgroundColor: period.color,
                             opacity: isVisible && width >= 0.1 ? 1 : 0,
                             display: scaledRightPos > 100 ? 'none' : 'flex'
                         }}
                     >
-                        <span className="p-1 truncate">
+                        <span className="pt-0.5 pl-1 truncate">
                             {period.name}
                         </span>
                     </div>
