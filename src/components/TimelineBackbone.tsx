@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 type TickLevel = 'maxi' | 'mega' | 'major' | 'minor';
 
@@ -94,7 +94,31 @@ const getLineScale = (zoomLevel: number) => {
 
 const TimelineBackbone = () => {
     const [zoomLevel, setZoomLevel] = useState(1);
+    const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [showDebugLabels, setShowDebugLabels] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Shift') {
+                setShowDebugPanel(true);
+            }
+        };
+    
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === 'Shift') {
+                setShowDebugPanel(false);
+            }
+        };
+    
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+    
+        // Clean up listeners when component unmounts
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
         e.preventDefault();
@@ -117,12 +141,13 @@ const TimelineBackbone = () => {
     const currentScaleSet = useMemo(() => {
         console.log("Calculating currentScaleSet");
         const scaleSets = generateScaleSets();
-        const activeIndex = activeZoomLevels.findIndex(active => active);
+        // Get the last true index instead of the first
+        const activeIndex = activeZoomLevels.lastIndexOf(true);
         console.log("Active index:", activeIndex);
         console.log("Active zoom levels:", activeZoomLevels);
         return activeIndex >= 0 ? scaleSets[activeIndex] : scaleSets[0];
-    }, [activeZoomLevels]); // Still just activeZoomLevels as dependency
-    
+    }, [activeZoomLevels]);
+
     const generateTicks = useCallback(() => {
         const tickMap = new Map<number, Tick>();
 
@@ -199,6 +224,7 @@ const TimelineBackbone = () => {
     return (
         <>
             {/* Debug Panel */}
+            {showDebugPanel && (
             <div className="fixed left-4 bottom-4 text-xs bg-white/80 p-2 z-10 border border-gray-200 rounded shadow">
                 <div className="flex items-center gap-2 mb-2">
                     <input
@@ -220,7 +246,7 @@ const TimelineBackbone = () => {
                     </>
                 )}
             </div>
-
+            )}
             <div
                 className="w-full max-w-6xl mx-auto px-10 pt-8 pb-32 overflow-hidden relative mt-[175px]"
                 onWheel={handleWheel}
