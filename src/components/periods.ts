@@ -2,6 +2,7 @@ import { Period } from './types';
 
 // The four main geological eons of Earth's history, from oldest to most recent
 export const GEOLOGICAL_EONS: Period[] = [
+     // Level 0 - Eons
     {
         name: "Hadean",
         startYear: 4600000000,  // 4.6 billion years ago
@@ -29,5 +30,27 @@ export const GEOLOGICAL_EONS: Period[] = [
         endYear: 0,             // Present
         color: "rgb(90, 210, 115, 0.5)",
         level: 0
+    },
+     // Level 1 - Eras
+    {
+        name: "Paleozoic",
+        startYear: 541000000,
+        endYear: 251900000,
+        color: "rgb(145, 72, 182, 0.5)",
+        level: 1
+    },
+    {
+        name: "Mesozoic",
+        startYear: 251900000,
+        endYear: 66000000,
+        color: "rgb(199, 88, 199, 0.5)",
+        level: 1
+    },
+    {
+        name: "Cenozoic",
+        startYear: 66000000,
+        endYear: 0,
+        color: "rgb(219, 130, 222, 0.5)",
+        level: 1
     }
 ];

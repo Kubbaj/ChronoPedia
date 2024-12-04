@@ -244,10 +244,12 @@ const TimelineBackbone = () => {
                         }}
                     />
 
-                    <TimelinePeriods 
-                    zoomLevel={zoomLevel} 
-                    periods={GEOLOGICAL_EONS}
-                    />
+<TimelinePeriods 
+    zoomLevel={zoomLevel} 
+    periods={GEOLOGICAL_EONS}
+    activeScaleSet={currentScaleSet}
+    activeZoomLevels={activeZoomLevels}
+/>
 
                     {ticks.map((tick, index) => {
                         const rightPos = (tick.year / 13800000000 * 100);
