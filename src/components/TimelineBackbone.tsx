@@ -123,7 +123,7 @@ const TimelineBackbone = () => {
         if (e.deltaY < 0) {
             setZoomLevel(prev => Math.min(prev * zoomFactor, 10000000000));
         } else {
-            setZoomLevel(prev => Math.max(prev / zoomFactor, 0.2));
+            setZoomLevel(prev => Math.max(prev / zoomFactor, 0.75));
         }
     }, []);
 

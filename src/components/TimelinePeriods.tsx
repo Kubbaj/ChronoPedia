@@ -11,11 +11,13 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
     periods = []
 }) => {
     const LEVEL_YEAR_THRESHOLDS = {
-        0: 13800000000,
-        1: 700000000,
-        2: 90000000,
-        3: 4000000,
-        4: 20000
+        0: 20000000000,
+        1: 20000000000,
+        2: 20000000000,
+        3: 700000000,
+        4: 90000000,
+        5: 4000000,
+        6: 20000
     };
 
     const getVisibleLevels = () => {
@@ -29,6 +31,8 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
 
     const getPeriodHeight = (level: number): string => {
         const baseHeight = 64;
+        const smallInterval = 0.3;
+        const bigInterval = 0.6;
         
         if (!visibleLevels.includes(level)) {
             return '0px';
@@ -36,16 +40,35 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
     
         // Get the lowest (most detailed) visible level
         const lowestVisibleLevel = Math.max(...visibleLevels);
+    
+        // Special initial heights for cosmological and stellar periods
+        if (lowestVisibleLevel < 3) {
+            // Before level 3 appears
+            if (level === 0) return `${baseHeight * 1.9}px`;
+            if (level === 1) return `${baseHeight * 1.3}px`;
+            return `${baseHeight}px`;
+        }
         
-        // Calculate steps away from current lowest level
+        // Special case when level 3 first appears
+        if (lowestVisibleLevel === 3) {
+            if (level === 0) return `${baseHeight * 2.2}px`;  // Original 1.9 + small .3
+            if (level === 1) return `${baseHeight * 1.9}px`;  // Original 1.3 + big .6
+            if (level === 2) return `${baseHeight * 1.6}px`;  // Base + big .6
+            return `${baseHeight}px`;  // Level 3 at base height
+        }
+    
+        // After level 3, return to normal expansion pattern
         const stepsFromLowest = lowestVisibleLevel - level;
         
         if (stepsFromLowest <= 0) {
+            // Current level
             return `${baseHeight}px`;
         } else if (stepsFromLowest === 1) {
-            return `${baseHeight * 1.6}px`;
+            // Immediate parent - big interval
+            return `${baseHeight * (1 + bigInterval)}px`;
         } else {
-            const expansion = 1.6 + ((stepsFromLowest - 1) * 0.3);
+            // Earlier ancestors - additional small intervals
+            const expansion = (1 + bigInterval) + ((stepsFromLowest - 1) * smallInterval);
             return `${baseHeight * expansion}px`;
         }
     };
