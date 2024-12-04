@@ -4,42 +4,49 @@ import { Period } from './types';
 interface TimelinePeriodsProps {
     zoomLevel: number;
     periods?: Period[];
-    activeZoomLevels: boolean[];
 }
 
 const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({ 
     zoomLevel, 
-    periods = [],
-    activeZoomLevels
+    periods = []
 }) => {
-    const LEVEL_VISIBILITY_THRESHOLDS = {
-        0: 0,  // Level 0 (eons) visible from the start
-        1: 3,  // Level 1 (eras) appear at 1B threshold (activeCount = 3)
+    const LEVEL_YEAR_THRESHOLDS = {
+        0: 13800000000,
+        1: 700000000,
+        2: 90000000,
+        3: 4000000,
+        4: 20000
     };
 
-    const activeCount = activeZoomLevels.filter(Boolean).length;
+    const getVisibleLevels = () => {
+        const viewportRightYear = 13800000000 / zoomLevel;
+        return Object.entries(LEVEL_YEAR_THRESHOLDS)
+            .filter(([_, thresholdYear]) => viewportRightYear <= thresholdYear)
+            .map(([level]) => parseInt(level));
+    };
+
+    const visibleLevels = getVisibleLevels();
 
     const getPeriodHeight = (level: number): string => {
-        const baseHeight = 'h-16';
+        const baseHeight = 16; // Base height in units (equivalent to h-16)
         
         // If this level isn't visible yet, no height
-        if (activeCount < LEVEL_VISIBILITY_THRESHOLDS[level]) {
+        if (!visibleLevels.includes(level)) {
             return 'h-0';
         }
 
-        // Count how many NEW levels have appeared since this level became visible
-        const newLevelsAfterThis = Object.entries(LEVEL_VISIBILITY_THRESHOLDS)
-            .filter(([_, threshold]) => 
-                threshold > LEVEL_VISIBILITY_THRESHOLDS[level] && // Appeared after this level
-                threshold <= activeCount // And is currently visible
-            ).length;
+        // Count levels that appeared after this one
+        const newerLevels = visibleLevels.filter(visibleLevel => 
+            LEVEL_YEAR_THRESHOLDS[visibleLevel] < LEVEL_YEAR_THRESHOLDS[level]
+        ).length;
 
-        // Increase height only if other levels appeared after this one
-        if (newLevelsAfterThis > 0) {
-            return `h-32`; // Double height to accommodate new levels
-        }
-
-        return baseHeight;
+        // Each newer level increases height by 50%
+        const expansion = newerLevels * 0.5;
+        const heightMultiplier = 1 + expansion;
+        
+        // Convert to tailwind height class (rounded to nearest available class)
+        const height = Math.round(baseHeight * heightMultiplier);
+        return `h-${height}`;
     };
 
     return (
@@ -51,13 +58,13 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
                 const scaledLeftPos = leftPos * zoomLevel;
                 const width = Math.abs(scaledLeftPos - scaledRightPos);
                 
-                const isVisible = activeCount >= LEVEL_VISIBILITY_THRESHOLDS[period.level];
+                const isVisible = visibleLevels.includes(period.level);
                 
                 return (
                     <div
                         key={index}
                         className={`absolute rounded-sm flex items-start 
-                                  text-xs font-medium transition-opacity duration-200
+                                  text-xs font-medium transition-all duration-200
                                   ${getPeriodHeight(period.level)}`}
                         style={{
                             right: `${scaledRightPos}%`,

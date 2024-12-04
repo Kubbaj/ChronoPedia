@@ -26,12 +26,12 @@ export const GEOLOGICAL_EONS: Period[] = [
     },
     {
         name: "Phanerozoic",
-        startYear: 541000000,   // 541 million years ago
-        endYear: 0,             // Present
+        startYear: 541000000,
+        endYear: 0,
         color: "rgb(90, 210, 115, 0.5)",
         level: 0
     },
-     // Level 1 - Eras
+    // Level 1 - Eras
     {
         name: "Paleozoic",
         startYear: 541000000,
@@ -52,5 +52,64 @@ export const GEOLOGICAL_EONS: Period[] = [
         endYear: 0,
         color: "rgb(219, 130, 222, 0.5)",
         level: 1
+    },
+    // Level 2 - Periods within Cenozoic
+    {
+        name: "Paleogene",
+        startYear: 66000000,
+        endYear: 23030000,
+        color: "rgb(165, 92, 56, 0.5)", // #A55C38
+        level: 2
+    },
+    {
+        name: "Neogene",
+        startYear: 23030000,
+        endYear: 2580000,
+        color: "rgb(190, 122, 65, 0.5)", // #BE7A41
+        level: 2
+    },
+    {
+        name: "Quaternary",
+        startYear: 2580000,
+        endYear: 0,
+        color: "rgb(209, 167, 82, 0.5)", // #D1A752
+        level: 2
+    },
+    // Level 3 - Epochs within Quaternary
+    {
+        name: "Pleistocene",
+        startYear: 2580000,
+        endYear: 11700,
+        color: "rgb(63, 158, 126, 0.5)", // #3F9E7E
+        level: 3
+    },
+    {
+        name: "Holocene",
+        startYear: 11700,
+        endYear: 0,
+        color: "rgb(199, 88, 199, 0.5)", // #C758C7 from Greenlandian as no specific Holocene color
+        level: 3
+    },
+    // Level 4 - Ages within Holocene
+    {
+        name: "Greenlandian",
+        startYear: 11700,
+        endYear: 8200,
+        color: "rgb(199, 88, 199, 0.5)", // #C758C7
+        level: 4
+    },
+    {
+        name: "Northgrippian",
+        startYear: 8200,
+        endYear: 4200,
+        color: "rgb(236, 111, 158, 0.5)", // #EC6F9E
+        level: 4
+    },
+    {
+        name: "Meghalayan",
+        startYear: 4200,
+        endYear: 0,
+        color: "rgb(239, 121, 121, 0.5)", // #EF7979
+        level: 4
     }
 ];

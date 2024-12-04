@@ -118,6 +118,8 @@ const TimelineBackbone = () => {
         }
     }, []);
 
+    const scaleSets = useMemo(() => generateScaleSets(), []);
+
     const activeZoomLevels = useMemo(() => {
         const scaleSets = generateScaleSets();
         return scaleSets.map(set => 
@@ -130,11 +132,11 @@ const TimelineBackbone = () => {
         // Get the last true index instead of the first
         const activeIndex = activeZoomLevels.lastIndexOf(true);
          return activeIndex >= 0 ? scaleSets[activeIndex] : scaleSets[0];
-    }, [activeZoomLevels]);
+    }, [activeZoomLevels, scaleSets]);
 
     const generateTicks = useCallback(() => {
         const tickMap = new Map<number, Tick>();
-
+    
         const addTick = (tick: Tick) => {
             const existing = tickMap.get(tick.year);
             if (!existing ||
@@ -143,8 +145,8 @@ const TimelineBackbone = () => {
                 tickMap.set(tick.year, tick);
             }
         };
-
-        // Add base billion year ticks
+    
+        // Base billion year ticks always exist
         for (let year = 1000000000; year <= 13000000000; year += 1000000000) {
             addTick({
                 year,
@@ -152,54 +154,41 @@ const TimelineBackbone = () => {
                 level: year % 5000000000 === 0 ? 'major' : 'minor'
             });
         }
-
-        // Add maxi ticks
+    
+        // Maxi ticks
         addTick({ year: 0, label: 'TODAY', level: 'maxi' });
         addTick({ year: 13800000000, label: '13.8B', level: 'maxi', dotted: true });
-
+    
         // Process each active zoom level
-        const scaleSets = generateScaleSets();
         activeZoomLevels.forEach((isActive, index) => {
             if (isActive) {
                 const scaleSet = scaleSets[index];
-
-                // Identify ticks that need promotion
-                const ticksToPromote = {
-                    minors: [] as Tick[],
-                    majors: [] as Tick[]
-                };
-
-                tickMap.forEach((tick) => {
-                    if (tick.year < scaleSet.zoomThreshold) {
-                        if (tick.level === 'minor') ticksToPromote.minors.push(tick);
-                        if (tick.level === 'major') ticksToPromote.majors.push(tick);
-                    }
-                });
-
-                // Add new minor ticks
+                
+                // Add new minor ticks at this scale
                 for (let year = scaleSet.minor; year < scaleSet.zoomThreshold; year += scaleSet.minor) {
                     addTick({
                         year,
-                        label: '',
+                        label: formatTimeLabel(year),
                         level: 'minor'
                     });
                 }
-
-                // Promote existing ticks
-                ticksToPromote.majors.forEach(tick => {
-                    tick.level = 'mega';
-                    tick.label = formatTimeLabel(tick.year);
-                });
-
-                ticksToPromote.minors.forEach(tick => {
-                    if (tick.year % scaleSet.major === 0) {
-                        tick.level = 'major';
-                        tick.label = formatTimeLabel(tick.year);
+    
+                // Promote existing ticks at this scale
+                tickMap.forEach((tick) => {
+                    if (tick.year < scaleSet.zoomThreshold) {
+                        if (tick.year % scaleSet.major === 0) {
+                            tick.level = 'major';
+                            tick.label = formatTimeLabel(tick.year);
+                        }
+                        if (tick.year % scaleSet.mega === 0) {
+                            tick.level = 'mega';
+                            tick.label = formatTimeLabel(tick.year);
+                        }
                     }
                 });
             }
         });
-
+    
         return Array.from(tickMap.values()).sort((a, b) => a.year - b.year);
     }, [activeZoomLevels]);
 
@@ -237,7 +226,7 @@ const TimelineBackbone = () => {
             >
                 <div className="relative h-48">
                     <div 
-                        className="absolute top-24 left-0 right-0 h-px bg-black"
+                        className="absolute top-24 left-0 right-0 h-px bg-black z-10 transition-transform duration-200"
                         style={{
                             transform: `scaleX(${getLineScale(zoomLevel)})`, // Replace the existing scaleX
                             transformOrigin: 'right'
@@ -251,53 +240,47 @@ const TimelineBackbone = () => {
     activeZoomLevels={activeZoomLevels}
 />
 
-                    {ticks.map((tick, index) => {
-                        const rightPos = (tick.year / 13800000000 * 100);
-                        const scaledRightPos = rightPos * zoomLevel;
-                        const { height, width, textStyle, showLabel } = tickStyles[tick.level];
+{ticks.map((tick) => {
+    const rightPos = (tick.year / 13800000000 * 100);
+    const scaledRightPos = rightPos * zoomLevel;
+    const { height, width, textStyle, showLabel } = tickStyles[tick.level];
 
-                        return (
-                            <div 
-                                key={index}
-                                className="absolute"
-                                style={{
-                                    right: `${scaledRightPos}%`,
-                                    top: '50%',
-                                    transform: 'translate(50%, -50%)',
-                                    display: scaledRightPos > 100 ? 'none' : 'block'
-                                }}
-                            >
-                                <div className={`
-                                    relative 
-                                    ${height} ${width}
-                                    ${tick.dotted ? 'border-l-4 border-dashed border-black' : 'bg-black'}
-                                    mx-auto
-                                `} />
+    return (
+        <div 
+            key={tick.year} // Use year as stable key
+            className="absolute transition-all duration-200"
+            style={{
+                right: `${scaledRightPos}%`,
+                top: '50%',
+                transform: 'translate(50%, -50%)',
+                display: scaledRightPos > 100 ? 'none' : 'block'
+            }}
+        >
+            <div className={`
+                relative 
+                transition-all duration-200 // Only transition size/appearance
+                ${height} ${width}
+                ${tick.dotted ? 'border-l-4 border-dashed border-black' : 'bg-black'}
+                mx-auto
+            `} />
 
-                                {showLabel && tick.label && (
-                                    <div className={`
-                                        absolute 
-                                        w-24 
-                                        text-center 
-                                        -translate-x-1/2 left-1/2  
-                                        ${tickStyles[tick.level].labelSpacing}
-                                        ${textStyle}
-                                        whitespace-nowrap
-                                    `}>
-                                        {tick.label}
-                                    </div>
-                                )}
-
-                                {showDebugLabels && (
-                                    <div className="absolute -top-6 text-[8px] opacity-50 w-12 text-center -translate-x-1/2 left-1/2">
-                                        {scaledRightPos.toFixed(1)}%
-                                        <br />
-                                        {tick.year}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+            {showLabel && tick.label && (
+                <div className={`
+                    absolute 
+                    w-24 
+                    text-center 
+                    -translate-x-1/2 left-1/2
+                    transition-all duration-200 // Transition text size/position
+                    ${tickStyles[tick.level].labelSpacing}
+                    ${textStyle}
+                    whitespace-nowrap
+                `}>
+                    {tick.label}
+                </div>
+            )}
+        </div>
+    );
+})}
                 </div>
                 
             </div>
