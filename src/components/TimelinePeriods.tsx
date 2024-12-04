@@ -75,7 +75,7 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
         backgroundColor: period.color,
         opacity: isVisible && width >= 0.1 ? 1 : 0,
         // Give more buffer space before unrendering
-        display: scaledRightPos > 150 ? 'none' : 'flex'  // Changed from 100 to 150
+        display: scaledRightPos > 175 ? 'none' : 'flex'  // Changed from 100 to 150
     }}
 >
                         <span className="pt-0.5 pl-1 truncate">

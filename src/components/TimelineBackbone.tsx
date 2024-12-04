@@ -80,6 +80,15 @@ const getLineScale = (zoomLevel: number) => {
     return zoomLevel <= fullWidthZoom ? zoomLevel : fullWidthZoom;
 };
 
+const TimelineEdgeGradient = () => (
+    <div className="pointer-events-none absolute top-0 left-0 h-full w-6" 
+         style={{
+           background: 'linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%)',
+           zIndex: 15
+         }}
+    />
+  );
+
 const TimelineBackbone = () => {
     const [zoomLevel, setZoomLevel] = useState(1);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
@@ -228,10 +237,13 @@ const TimelineBackbone = () => {
                 )}
             </div>
             )}
+
+
             <div
-                className="w-full max-w-6xl mx-auto px-10 pt-8 pb-32 overflow-hidden relative mt-[175px]"
+                className="w-full max-w-6xl mx-auto px-16 pt-8 pb-32 overflow-hidden relative mt-[175px]"
                 onWheel={handleWheel}
             >
+            <TimelineEdgeGradient />
                 <div className="relative h-48">
                     <div 
                         className="absolute top-24 left-0 right-0 h-px bg-black z-10 transition-all duration-500"
@@ -254,10 +266,10 @@ const TimelineBackbone = () => {
     const { height, width, textStyle, showLabel } = tickStyles[tick.level];
 
     // Split visibility check from threshold check
+    const shouldStartFade = scaledRightPos > 150; 
     const isOffscreen = scaledRightPos > 150;  // Visual disappearance
-    const isOverThreshold = scaledRightPos > 100;  // Threshold logic
     
-    const isVisible = !isOverThreshold; // Keep original threshold behavior
+    const isVisible = !shouldStartFade; // Keep original threshold behavior
     const animationClass = tick.level === 'minor' 
         ? (isVisible ? 'animate-fadeIn' : 'animate-fadeOut')
         : '';
@@ -270,7 +282,10 @@ const TimelineBackbone = () => {
                 right: `${scaledRightPos}%`,
                 top: '50%',
                 transform: 'translate(50%, -50%)',
-                display: isOffscreen ? 'none' : 'block'  // Separate from threshold logic
+                // Only remove from DOM when truly offscreen, regardless of animation state
+                display: isOffscreen ? 'none' : 'block',
+                // Don't let fadeOut animation hide elements before they're offscreen
+                visibility: scaledRightPos > 150 ? 'hidden' : 'visible'
             }}
         >
             <div className={`
