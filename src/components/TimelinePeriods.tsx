@@ -63,21 +63,21 @@ const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({
                 
                 return (
                     <div
-                        key={index}
-                        className={`absolute rounded-sm flex items-start 
-                                  text-xs font-medium transition-all duration-400
-                                  `}
-                        style={{
-                            right: `${scaledRightPos}%`,
-                            width: `${width}%`,
-                            top: '50%',
-                            height: getPeriodHeight(period.level), // Apply height via style
-                            transform: 'translateY(-50%)',
-                            backgroundColor: period.color,
-                            opacity: isVisible && width >= 0.1 ? 1 : 0,
-                            display: scaledRightPos > 100 ? 'none' : 'flex'
-                        }}
-                    >
+    key={index}
+    className={`absolute rounded-sm flex items-start 
+              text-xs font-medium transition-all duration-500`}
+    style={{
+        right: `${scaledRightPos}%`,
+        width: `${width}%`,
+        top: '50%',
+        height: getPeriodHeight(period.level),
+        transform: 'translateY(-50%)',
+        backgroundColor: period.color,
+        opacity: isVisible && width >= 0.1 ? 1 : 0,
+        // Give more buffer space before unrendering
+        display: scaledRightPos > 150 ? 'none' : 'flex'  // Changed from 100 to 150
+    }}
+>
                         <span className="pt-0.5 pl-1 truncate">
                             {period.name}
                         </span>

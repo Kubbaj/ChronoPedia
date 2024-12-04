@@ -234,7 +234,7 @@ const TimelineBackbone = () => {
             >
                 <div className="relative h-48">
                     <div 
-                        className="absolute top-24 left-0 right-0 h-px bg-black z-10 transition-transform duration-800"
+                        className="absolute top-24 left-0 right-0 h-px bg-black z-10 transition-all duration-500"
                         style={{
                             transform: `scaleX(${getLineScale(zoomLevel)})`, // Replace the existing scaleX
                             transformOrigin: 'right'
@@ -253,27 +253,38 @@ const TimelineBackbone = () => {
     const scaledRightPos = rightPos * zoomLevel;
     const { height, width, textStyle, showLabel } = tickStyles[tick.level];
 
+    // Split visibility check from threshold check
+    const isOffscreen = scaledRightPos > 150;  // Visual disappearance
+    const isOverThreshold = scaledRightPos > 100;  // Threshold logic
+    
+    const isVisible = !isOverThreshold; // Keep original threshold behavior
+    const animationClass = tick.level === 'minor' 
+        ? (isVisible ? 'animate-fadeIn' : 'animate-fadeOut')
+        : '';
+
     return (
         <div 
-            key={tick.year} // Use year as stable key
-            className="absolute transition-all duration-800"
+            key={tick.year}
+            className="absolute transition-all duration-500"
             style={{
                 right: `${scaledRightPos}%`,
                 top: '50%',
                 transform: 'translate(50%, -50%)',
-                display: scaledRightPos > 100 ? 'none' : 'block'
+                display: isOffscreen ? 'none' : 'block'  // Separate from threshold logic
             }}
         >
             <div className={`
                 relative 
-                transition-all duration-800 // Only transition size/appearance
+                transition-all duration-500
                 ${tick.dotted ? 'border-l-4 border-dashed border-black' : 'bg-black'}
                 mx-auto
-            `} 
+                ${animationClass}
+            `}
                 style={{
                     height: height,
-                    width: width 
-                    }} />
+                    width: width
+                }}
+            />
 
             {showLabel && tick.label && (
                 <div className={`
@@ -281,7 +292,7 @@ const TimelineBackbone = () => {
                     w-24 
                     text-center 
                     -translate-x-1/2 left-1/2
-                    transition-all duration-800 // Transition text size/position
+                    transition-all duration-500 // Transition text size/position
                     ${tickStyles[tick.level].labelSpacing}
                     ${textStyle}
                     whitespace-nowrap
