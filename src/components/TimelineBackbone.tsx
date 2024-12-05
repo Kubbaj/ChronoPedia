@@ -38,14 +38,14 @@ const tickStyles = {
         showLabel: true
     },
     mega: {
-        height: '150px',
+        height: '180px',
         width: '6px',
         textStyle: 'text-[1rem] font-bold',
         labelSpacing: '-bottom-6',
         showLabel: true
     },
     major: {
-        height: '80px',
+        height: '70px',
         width: '4px',
         textStyle: 'text-[0.75rem]',
         labelSpacing: '-bottom-4',

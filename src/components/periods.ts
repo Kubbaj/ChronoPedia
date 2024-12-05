@@ -17,7 +17,7 @@ export const GEOLOGICAL_EONS: Period[] = [
         level: 0
     },
     {
-        name: "Star Formation",
+        name: "Star Formation Period",
         startYear: 13650000000,    // 13B
         endYear: 0,      // 10B
         color: "rgba(28, 69, 135, 0.75)", // #1C4587
@@ -55,14 +55,14 @@ export const GEOLOGICAL_EONS: Period[] = [
     // Level 2 - Geological Eons (moved from level 0)
     {
         name: "Hadean",
-        startYear: 4600000000,  // 4.6B
-        endYear: 4000000000,    // 4.0B
+        startYear: 4567000000,  // 4.6B
+        endYear: 4031000000,    // 4.0B
         color: "rgba(207, 70, 70, 0.75)",
         level: 2
     },
     {
         name: "Archean",
-        startYear: 4000000000,  // 4.0B
+        startYear: 4031000000,  // 4.0B
         endYear: 2500000000,    // 2.5B
         color: "rgba(147, 196, 125, 0.75)",
         level: 2
