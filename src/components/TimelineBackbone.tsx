@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { TickLevel, Tick, ScaleSet } from './types';
+import {Tick, ScaleSet } from './types';
 import TimelinePeriods from './TimelinePeriods';
 import { GEOLOGICAL_EONS } from './periods';
 
@@ -55,7 +55,8 @@ const tickStyles = {
         height: '20px',
         width: '2px',
         textStyle: '',
-        showLabel: false
+        showLabel: false,
+        labelSpacing: 'bottom-0'
     }
 };
 

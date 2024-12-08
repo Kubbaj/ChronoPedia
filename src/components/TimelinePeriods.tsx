@@ -1,9 +1,14 @@
-import React from 'react';
-import { Period } from './types';
+import React, { useState } from 'react';
+import { Period, ScaleSet } from './types';
 
 interface TimelinePeriodsProps {
     zoomLevel: number;
-    periods?: Period[];
+    cosmologicalPeriods?: Period[];
+    geologicalPeriods?: Period[];
+    archaeologicalPeriods?: Period[];
+    historicalPeriods?: Period[];
+    activeScaleSet?: ScaleSet;
+    activeZoomLevels?: boolean[];
 }
 
 const TimelinePeriods: React.FC<TimelinePeriodsProps> = ({ 
